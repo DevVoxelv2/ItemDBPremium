@@ -1,6 +1,7 @@
 package net.devvoxel.itemDB.i18n;
 
 import net.devvoxel.itemDB.ItemDB;
+import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -23,7 +24,7 @@ public class MessageManager {
     public void reload() {
         cfg = YamlConfiguration.loadConfiguration(file);
         prefix = plugin.getConfig().getString("Prefix", "&8[&cItemDB&8]&7 ");
-        guiTitle = plugin.getConfig().getString("Gui.Title", "§cOPSucht §7» §fMarktplatz");
+        guiTitle = plugin.getConfig().getString("Gui.Title", "&cItemDB &7» &fItems");
         // inject dynamic values into messages.yml fields if referenced
         cfg.set("gui-title", cfg.getString("gui-title", "{gui_title}")
                 .replace("{gui_title}", guiTitle));
@@ -46,6 +47,10 @@ public class MessageManager {
     public String guiTitle() { return guiTitle; }
 
     public static String color(String s) {
-        return s.replace('&', '§');
+        if (s == null) {
+            return "";
+        }
+        String normalized = s.replace('§', '&');
+        return ChatColor.translateAlternateColorCodes('&', normalized);
     }
 }

@@ -39,11 +39,9 @@ public class ItemDB extends JavaPlugin {
         saveResource("messages.yml", false);
 
         try {
-            // MySQL-Verbindung herstellen
             this.database = new Database(this);
             database.connect();
 
-            // Manager laden
             this.messageManager = new MessageManager(this);
             this.webhookNotifier = new WebhookNotifier(this);
             this.externalItemProvider = new ExternalItemProvider(this);
@@ -51,25 +49,23 @@ public class ItemDB extends JavaPlugin {
             this.itemsGui = new ItemsGui(this);
 
             if (externalItemProvider.hasAnyIntegration()) {
-                getLogger().info("Aktive Item-Integrationen: " + externalItemProvider.describeSources());
+                getLogger().info("Active item integrations: " + externalItemProvider.describeSources());
             }
 
             if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
                 this.placeholderExpansion = new ItemDBPlaceholderExpansion(this);
                 this.placeholderExpansion.register();
-                getLogger().info("PlaceholderAPI-Unterstützung aktiviert.");
+                getLogger().info("PlaceholderAPI support enabled.");
             }
 
-            // Command registrieren
             var dbCmd = new DbCommand(this);
             getCommand("db").setExecutor(dbCmd);
             getCommand("db").setTabCompleter(dbCmd);
 
-            // Listener registrieren
             Bukkit.getPluginManager().registerEvents(itemsGui, this);
 
             // === bStats Metrics ===
-            int pluginId = 27408; // deine Plugin-ID von bStats
+            int pluginId = 27408; // bStats plugin id
             Metrics metrics = new Metrics(this, pluginId);
 
             // Custom Chart: Anzahl gespeicherter Items
@@ -83,10 +79,10 @@ public class ItemDB extends JavaPlugin {
             long interval = Math.max(20L, getConfig().getLong("Database.SyncIntervalTicks", 100L));
             this.syncTask = itemManager.applySyncTask(interval);
 
-            getLogger().info("ItemDB erfolgreich aktiviert.");
-            getLogger().info("Geladene Items aus Datenbank: " + itemManager.size());
+            getLogger().info("ItemDBPremium has been enabled. Thank you for your support!");
+            getLogger().info("Loaded items from the database: " + itemManager.size());
         } catch (Exception e) {
-            getLogger().severe("Konnte nicht mit der Datenbank verbinden: " + e.getMessage());
+            getLogger().severe("Unable to connect to the database: " + e.getMessage());
             getServer().getPluginManager().disablePlugin(this);
         }
     }
@@ -104,7 +100,7 @@ public class ItemDB extends JavaPlugin {
         if (database != null) {
             database.close();
         }
-        getLogger().info("ItemDB deaktiviert.");
+        getLogger().info("ItemDBPremium has been disabled.");
     }
 
     // === Getter ===
