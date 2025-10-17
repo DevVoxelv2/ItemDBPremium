@@ -15,6 +15,15 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.regex.Pattern;
+
 public class ItemDB extends JavaPlugin {
 
     private static ItemDB instance;
@@ -28,6 +37,9 @@ public class ItemDB extends JavaPlugin {
     private ItemDBPlaceholderExpansion placeholderExpansion;
     private BukkitTask syncTask;
 
+    private static final Pattern LICENSE_VALID_PATTERN = Pattern.compile("\"valid\"\\s*:\\s*(true|false)", Pattern.CASE_INSENSITIVE);
+    private static final int PRODUCT_ID = 4792;
+
     public static ItemDB get() {
         return instance;
     }
@@ -37,6 +49,11 @@ public class ItemDB extends JavaPlugin {
         instance = this;
         saveDefaultConfig();
         saveResource("messages.yml", false);
+
+        if (!verifyLicense()) {
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
 
         try {
             this.database = new Database(this);
@@ -126,5 +143,54 @@ public class ItemDB extends JavaPlugin {
 
     public ExternalItemProvider externalItems() {
         return externalItemProvider;
+    }
+
+    private boolean verifyLicense() {
+        String licenseKey = getConfig().getString("License.Key", "").trim();
+
+        if (licenseKey.isEmpty()) {
+            getLogger().severe("License check failed: license key is missing in the configuration.");
+            return false;
+        }
+
+        try {
+            String query = "pid=" + PRODUCT_ID + "&key=" + URLEncoder.encode(licenseKey, StandardCharsets.UTF_8);
+            URI uri = URI.create("https://api.chunkfactory.com?" + query);
+
+            HttpRequest request = HttpRequest.newBuilder(uri)
+                    .header("Accept", "application/json")
+                    .timeout(Duration.ofSeconds(10))
+                    .GET()
+                    .build();
+
+            HttpClient client = HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofSeconds(10))
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() != 200) {
+                getLogger().severe("License check failed: unexpected response code " + response.statusCode());
+                return false;
+            }
+
+            String body = response.body();
+            var matcher = LICENSE_VALID_PATTERN.matcher(body);
+            if (matcher.find()) {
+                boolean valid = Boolean.parseBoolean(matcher.group(1));
+                if (valid) {
+                    getLogger().info("License validated successfully.");
+                    return true;
+                }
+                getLogger().severe("License check failed: the configured license key is invalid.");
+                return false;
+            }
+
+            getLogger().severe("License check failed: could not parse response.");
+        } catch (Exception exception) {
+            getLogger().severe("License check failed: " + exception.getMessage());
+        }
+
+        return false;
     }
 }
