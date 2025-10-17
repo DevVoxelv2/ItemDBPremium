@@ -2,9 +2,12 @@ package net.devvoxel.itemDB;
 
 import net.devvoxel.itemDB.command.DbCommand;
 import net.devvoxel.itemDB.data.Database;
+import net.devvoxel.itemDB.integration.ExternalItemProvider;
+import net.devvoxel.itemDB.integration.ItemDBPlaceholderExpansion;
 import net.devvoxel.itemDB.managers.ItemManager;
 import net.devvoxel.itemDB.i18n.MessageManager;
 import net.devvoxel.itemDB.ui.ItemsGui;
+import net.devvoxel.itemDB.webhook.WebhookNotifier;
 import org.bstats.bukkit.Metrics;
 import org.bstats.charts.SingleLineChart;
 import org.bstats.charts.SimplePie;
@@ -20,6 +23,9 @@ public class ItemDB extends JavaPlugin {
     private ItemManager itemManager;
     private MessageManager messageManager;
     private ItemsGui itemsGui;
+    private WebhookNotifier webhookNotifier;
+    private ExternalItemProvider externalItemProvider;
+    private ItemDBPlaceholderExpansion placeholderExpansion;
     private BukkitTask syncTask;
 
     public static ItemDB get() {
@@ -39,8 +45,20 @@ public class ItemDB extends JavaPlugin {
 
             // Manager laden
             this.messageManager = new MessageManager(this);
-            this.itemManager = new ItemManager(this, database);
+            this.webhookNotifier = new WebhookNotifier(this);
+            this.externalItemProvider = new ExternalItemProvider(this);
+            this.itemManager = new ItemManager(this, database, webhookNotifier, externalItemProvider);
             this.itemsGui = new ItemsGui(this);
+
+            if (externalItemProvider.hasAnyIntegration()) {
+                getLogger().info("Aktive Item-Integrationen: " + externalItemProvider.describeSources());
+            }
+
+            if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+                this.placeholderExpansion = new ItemDBPlaceholderExpansion(this);
+                this.placeholderExpansion.register();
+                getLogger().info("PlaceholderAPI-Unterstützung aktiviert.");
+            }
 
             // Command registrieren
             var dbCmd = new DbCommand(this);
@@ -79,6 +97,10 @@ public class ItemDB extends JavaPlugin {
             syncTask.cancel();
             syncTask = null;
         }
+        if (placeholderExpansion != null) {
+            placeholderExpansion.unregister();
+            placeholderExpansion = null;
+        }
         if (database != null) {
             database.close();
         }
@@ -100,5 +122,13 @@ public class ItemDB extends JavaPlugin {
 
     public Database db() {
         return database;
+    }
+
+    public WebhookNotifier webhooks() {
+        return webhookNotifier;
+    }
+
+    public ExternalItemProvider externalItems() {
+        return externalItemProvider;
     }
 }

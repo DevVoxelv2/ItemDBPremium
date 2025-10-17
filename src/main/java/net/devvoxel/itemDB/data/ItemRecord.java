@@ -5,7 +5,9 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -67,5 +69,34 @@ public record ItemRecord(
 
     public Map<String, Integer> enchantmentsUnmodifiable() {
         return Collections.unmodifiableMap(enchantments);
+    }
+
+    public static ItemRecord fromStack(String key, ItemStack stack, long timestamp, boolean deleted) {
+        ItemStack clone = stack.clone();
+        ItemMeta meta = clone.getItemMeta();
+
+        String display = null;
+        List<String> lore = List.of();
+        Integer customModelData = null;
+        Map<String, Integer> enchantments = Map.of();
+
+        if (meta != null) {
+            if (meta.hasDisplayName()) {
+                display = meta.getDisplayName();
+            }
+            if (meta.hasLore()) {
+                lore = new ArrayList<>(meta.getLore());
+            }
+            if (meta.hasCustomModelData()) {
+                customModelData = meta.getCustomModelData();
+            }
+            if (!meta.getEnchants().isEmpty()) {
+                Map<String, Integer> map = new HashMap<>();
+                meta.getEnchants().forEach((enchantment, level) -> map.put(namespacedKey(enchantment), level));
+                enchantments = map;
+            }
+        }
+
+        return new ItemRecord(key, clone, display, lore, customModelData, enchantments, timestamp, deleted);
     }
 }

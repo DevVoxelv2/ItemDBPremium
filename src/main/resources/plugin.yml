@@ -1,51 +1,75 @@
-name: ItemDB
-version: '1.0.2-SNAPSHOT'
+name: ItemDBPremium
+version: '${project.version}'
 main: net.devvoxel.itemDB.ItemDB
 api-version: '1.21'
 authors: [ DevVoxel ]
-description: Item database with GUI
+description: Premium item database with SQL & MongoDB storage
+softdepend:
+  - PlaceholderAPI
+  - ItemsAdder
+  - Oraxen
 
 commands:
   db:
     description: ItemDB commands
-    usage: "/db <name> | /db add <name> | /db remove <name> | /db giveitem <name> <player> | /db show | /db search <query> | /db info <name> | /db edit <name> ..."
-    permission: net.devvoxel.itemdb.use
+    usage: "/db <name> | /db add <name> | /db remove <name> | /db giveitem <name> <player> | /db show | /db search <query> | /db info <name> | /db edit <name> ... | /db history <name> | /db diff <name> <v1> <v2> | /db rollback <name> <version> | /db import file <path> | /db export file <path>"
+    permission: itemdb.premium.use
 
 permissions:
-  net.devvoxel.itemdb.*:
+  itemdb.premium.*:
     description: All ItemDB permissions
     default: op
     children:
-      net.devvoxel.itemdb.use: true
-      net.devvoxel.itemdb.add: true
-      net.devvoxel.itemdb.remove: true
-      net.devvoxel.itemdb.giveitem: true
-      net.devvoxel.itemdb.show: true
-      net.devvoxel.itemdb.search: true
-      net.devvoxel.itemdb.info: true
-      net.devvoxel.itemdb.edit: true
+      itemdb.premium.use: true
+      itemdb.premium.add: true
+      itemdb.premium.remove: true
+      itemdb.premium.giveitem: true
+      itemdb.premium.show: true
+      itemdb.premium.search: true
+      itemdb.premium.info: true
+      itemdb.premium.edit: true
+      itemdb.premium.history: true
+      itemdb.premium.diff: true
+      itemdb.premium.rollback: true
+      itemdb.premium.import: true
+      itemdb.premium.export: true
 
-  net.devvoxel.itemdb.use:
+  itemdb.premium.use:
     description: Use /db
     default: op
-  net.devvoxel.itemdb.add:
+  itemdb.premium.add:
     description: Use /db add
     default: op
-  net.devvoxel.itemdb.remove:
+  itemdb.premium.remove:
     description: Use /db remove
     default: op
-  net.devvoxel.itemdb.giveitem:
+  itemdb.premium.giveitem:
     description: Use /db giveitem
     default: op
-  net.devvoxel.itemdb.show:
+  itemdb.premium.show:
     description: Use /db show
     default: op
-  net.devvoxel.itemdb.search:
+  itemdb.premium.search:
     description: Use /db search
     default: op
-  net.devvoxel.itemdb.info:
+  itemdb.premium.info:
     description: Use /db info
     default: op
-  net.devvoxel.itemdb.edit:
+  itemdb.premium.edit:
     description: Use /db edit
+    default: op
+  itemdb.premium.history:
+    description: Use /db history
+    default: op
+  itemdb.premium.diff:
+    description: Use /db diff
+    default: op
+  itemdb.premium.rollback:
+    description: Use /db rollback
+    default: op
+  itemdb.premium.import:
+    description: Use /db import
+    default: op
+  itemdb.premium.export:
+    description: Use /db export
     default: op

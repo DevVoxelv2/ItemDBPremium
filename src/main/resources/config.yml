@@ -9,6 +9,14 @@ Database:
   Password: "password"
   Table: "itemdb_items"
   SyncIntervalTicks: 100
+  MongoConnectionUri: "mongodb://127.0.0.1:27017/itemdb"
+  MongoDatabase: "itemdb"
+  MongoCollectionPrefix: "itemdb_"
+
+Webhooks:
+  Discord:
+    OnChange: "https://discordWebhookUrl"
+    OnError: "https://discordWebhookUrl"
 
 Gui:
   Title: "§cItemDB §7» §fItems"
