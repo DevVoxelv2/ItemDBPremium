@@ -16,9 +16,9 @@ gui-lore:
   - "&8Name: &f{name}"
   - "&8Source: &fItemDB"
 gui-player-head-lore:
-  - "&7Gespeicherte Items: &f{items}"
-  - "&7Datenbank: &f{database}"
-  - "&7Letzte Sync: &f{last_sync}"
+  - "&7Stored items: &f{items}"
+  - "&7Database: &f{database}"
+  - "&7Last sync: &f{last_sync}"
 gui-empty: "{prefix}&7No items have been saved yet. Use &e/db add <name>&7 to store one."
 gui-back: "&aBack"
 gui-next: "&aNext"

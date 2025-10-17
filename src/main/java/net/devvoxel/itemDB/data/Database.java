@@ -11,7 +11,6 @@ import com.mongodb.client.model.Indexes;
 import com.mongodb.client.model.ReplaceOptions;
 import com.mongodb.client.model.Sorts;
 import com.mongodb.client.model.Updates;
-import com.mongodb.client.result.ReplaceOneResult;
 import com.mongodb.client.result.UpdateResult;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -340,7 +339,7 @@ public class Database {
         try {
             ItemRecord deleted = record.markDeleted(timestamp);
             ReplaceOptions options = new ReplaceOptions().upsert(false);
-            ReplaceOneResult result = mongoItems.replaceOne(Filters.eq("_id", record.key()),
+            UpdateResult result = mongoItems.replaceOne(Filters.eq("_id", record.key()),
                     buildMongoItemDocument(deleted, serialized), options);
             if (result.getMatchedCount() == 0) {
                 return false;
