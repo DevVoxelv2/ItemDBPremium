@@ -15,8 +15,14 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 
 import java.util.List;
+import java.util.Locale;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
 public class ItemsGui implements Listener {
+    private static final DateTimeFormatter HEAD_FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")
+            .withZone(ZoneId.systemDefault());
     private static final int ROWS = 6;
     private static final int SIZE = ROWS * 9;
     private static final int ITEMS_PER_ROW = 7;
@@ -121,6 +127,21 @@ public class ItemsGui implements Listener {
         if (meta instanceof SkullMeta skullMeta) {
             skullMeta.setOwningPlayer(player);
             skullMeta.setDisplayName("§e" + player.getName());
+            List<String> loreTemplate = plugin.messages().getList("gui-player-head-lore");
+            if (!loreTemplate.isEmpty()) {
+                long lastSync = plugin.items().lastSync();
+                String formattedSync = lastSync > 0
+                        ? HEAD_FORMATTER.format(Instant.ofEpochMilli(lastSync))
+                        : "-";
+                List<String> lore = loreTemplate.stream()
+                        .map(line -> line
+                                .replace("{player}", player.getName())
+                                .replace("{items}", String.valueOf(plugin.items().size()))
+                                .replace("{database}", plugin.db().type().name().toLowerCase(Locale.ROOT))
+                                .replace("{last_sync}", formattedSync))
+                        .toList();
+                skullMeta.setLore(lore);
+            }
             head.setItemMeta(skullMeta);
         }
         return head;
