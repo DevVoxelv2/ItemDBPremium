@@ -1,0 +1,7 @@
+net\devvoxel\itemDB\data\Database.class
+net\devvoxel\itemDB\ui\ItemsGui.class
+net\devvoxel\itemDB\i18n\MessageManager.class
+net\devvoxel\itemDB\managers\ItemManager.class
+net\devvoxel\itemDB\ui\ItemsGui$GuiHolder.class
+net\devvoxel\itemDB\ItemDB.class
+net\devvoxel\itemDB\command\DbCommand.class

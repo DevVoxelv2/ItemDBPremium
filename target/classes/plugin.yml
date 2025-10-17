@@ -1,0 +1,39 @@
+name: ItemDB
+version: '1.0.2-SNAPSHOT'
+main: net.devvoxel.itemDB.ItemDB
+api-version: '1.21'
+authors: [ DevVoxel ]
+description: Item database with GUI
+
+commands:
+  db:
+    description: ItemDB commands
+    usage: "/db <name> | /db add <name> | /db remove <name> | /db giveitem <name> <player> | /db show"
+    permission: net.devvoxel.itemdb.use
+
+permissions:
+  net.devvoxel.itemdb.*:
+    description: All ItemDB permissions
+    default: op
+    children:
+      net.devvoxel.itemdb.use: true
+      net.devvoxel.itemdb.add: true
+      net.devvoxel.itemdb.remove: true
+      net.devvoxel.itemdb.giveitem: true
+      net.devvoxel.itemdb.show: true
+
+  net.devvoxel.itemdb.use:
+    description: Use /db
+    default: op
+  net.devvoxel.itemdb.add:
+    description: Use /db add
+    default: op
+  net.devvoxel.itemdb.remove:
+    description: Use /db remove
+    default: op
+  net.devvoxel.itemdb.giveitem:
+    description: Use /db giveitem
+    default: op
+  net.devvoxel.itemdb.show:
+    description: Use /db show
+    default: op

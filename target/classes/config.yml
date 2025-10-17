@@ -1,0 +1,15 @@
+Prefix: "&8[&cItemDB&8]&7 "
+
+Database:
+  Type: "mysql" # oder "sqlite"
+  Host: "127.0.0.1"
+  Port: 3306
+  Database: "itemdb"
+  User: "root"
+  Password: "password"
+  Table: "itemdb_items"
+
+Gui:
+  Title: "§cItemDB §7» §fItems"
+  Rows: 6
+  BorderGlassData: 7
