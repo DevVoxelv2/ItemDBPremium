@@ -38,7 +38,7 @@ public class ItemDB extends JavaPlugin {
     private BukkitTask syncTask;
 
     private static final Pattern LICENSE_VALID_PATTERN = Pattern.compile("\"valid\"\\s*:\\s*(true|false)", Pattern.CASE_INSENSITIVE);
-    private static final int PRODUCT_ID = 4792;
+    private static final int PRODUCT_ID = 4796;
 
     public static ItemDB get() {
         return instance;
