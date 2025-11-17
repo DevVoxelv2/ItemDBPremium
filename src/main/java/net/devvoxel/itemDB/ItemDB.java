@@ -15,14 +15,14 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import java.net.URI;
-import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.regex.Pattern;
 
 public class ItemDB extends JavaPlugin {
 
@@ -37,8 +37,10 @@ public class ItemDB extends JavaPlugin {
     private ItemDBPlaceholderExpansion placeholderExpansion;
     private BukkitTask syncTask;
 
-    private static final Pattern LICENSE_VALID_PATTERN = Pattern.compile("\"valid\"\\s*:\\s*(true|false)", Pattern.CASE_INSENSITIVE);
-    private static final int PRODUCT_ID = 4796;
+    private static final String API_BASE_URL = "https://www.craftingstudiopro.de";
+    private static final String LICENSE_VALIDATE_ENDPOINT = "/api/license/validate";
+    private static final String PLUGIN_ID = "plugin-1763403667061-1166ywns8";
+    private static final Gson GSON = new Gson();
 
     public static ItemDB get() {
         return instance;
@@ -154,13 +156,19 @@ public class ItemDB extends JavaPlugin {
         }
 
         try {
-            String query = "pid=" + PRODUCT_ID + "&key=" + URLEncoder.encode(licenseKey, StandardCharsets.UTF_8);
-            URI uri = URI.create("https://api.chunkfactory.com?" + query);
+            // Erstelle JSON Request Body
+            JsonObject requestBody = new JsonObject();
+            requestBody.addProperty("licenseKey", licenseKey);
+            requestBody.addProperty("pluginId", PLUGIN_ID);
+            String jsonBody = GSON.toJson(requestBody);
+
+            URI uri = URI.create(API_BASE_URL + LICENSE_VALIDATE_ENDPOINT);
 
             HttpRequest request = HttpRequest.newBuilder(uri)
+                    .header("Content-Type", "application/json")
                     .header("Accept", "application/json")
                     .timeout(Duration.ofSeconds(10))
-                    .GET()
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody, StandardCharsets.UTF_8))
                     .build();
 
             HttpClient client = HttpClient.newBuilder()
@@ -175,20 +183,34 @@ public class ItemDB extends JavaPlugin {
             }
 
             String body = response.body();
-            var matcher = LICENSE_VALID_PATTERN.matcher(body);
-            if (matcher.find()) {
-                boolean valid = Boolean.parseBoolean(matcher.group(1));
-                if (valid) {
-                    getLogger().info("License validated successfully.");
-                    return true;
-                }
-                getLogger().severe("License check failed: the configured license key is invalid.");
+            JsonObject jsonResponse = GSON.fromJson(body, JsonObject.class);
+
+            if (jsonResponse == null) {
+                getLogger().severe("License check failed: could not parse response.");
                 return false;
             }
 
-            getLogger().severe("License check failed: could not parse response.");
+            boolean valid = jsonResponse.has("valid") && jsonResponse.get("valid").getAsBoolean();
+
+            if (valid) {
+                getLogger().info("License validated successfully.");
+                if (jsonResponse.has("purchase")) {
+                    JsonObject purchase = jsonResponse.getAsJsonObject("purchase");
+                    getLogger().info("Purchase ID: " + purchase.get("id").getAsString());
+                }
+                return true;
+            } else {
+                String message = jsonResponse.has("message") 
+                    ? jsonResponse.get("message").getAsString() 
+                    : "Ungültiger Lizenz-Key";
+                getLogger().severe("License check failed: " + message);
+                return false;
+            }
         } catch (Exception exception) {
             getLogger().severe("License check failed: " + exception.getMessage());
+            if (getLogger().isLoggable(java.util.logging.Level.FINE)) {
+                exception.printStackTrace();
+            }
         }
 
         return false;
