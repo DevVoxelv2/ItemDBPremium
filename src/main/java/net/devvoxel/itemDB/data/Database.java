@@ -137,6 +137,68 @@ public class Database {
         }
     }
 
+    private boolean indexExists(Connection connection, String tableName, String indexName) throws SQLException {
+        // DatabaseMetaData.getIndexInfo liefert Index-Infos für die meisten JDBC-Treiber
+        try (ResultSet rs = connection.getMetaData().getIndexInfo(connection.getCatalog(), null, tableName, false, false)) {
+            while (rs.next()) {
+                String existing = rs.getString("INDEX_NAME");
+                if (existing != null && existing.equals(indexName)) {
+                    return true;
+                }
+            }
+        }
+        // manche Treiber/DBs geben nichts zurück, versuchen wir es noch mit upper/lower names
+        try (ResultSet rs = connection.getMetaData().getIndexInfo(connection.getCatalog(), null, tableName.toUpperCase(Locale.ROOT), false, false)) {
+            while (rs.next()) {
+                String existing = rs.getString("INDEX_NAME");
+                if (existing != null && existing.equals(indexName)) {
+                    return true;
+                }
+            }
+        } catch (SQLException ignored) {}
+        try (ResultSet rs = connection.getMetaData().getIndexInfo(connection.getCatalog(), null, tableName.toLowerCase(Locale.ROOT), false, false)) {
+            while (rs.next()) {
+                String existing = rs.getString("INDEX_NAME");
+                if (existing != null && existing.equals(indexName)) {
+                    return true;
+                }
+            }
+        } catch (SQLException ignored) {}
+        return false;
+    }
+
+    private void ensureIndexExists(Connection connection, String tableName, String indexName, String columnsSql, boolean unique) throws SQLException {
+        if (indexExists(connection, tableName, indexName)) {
+            return;
+        }
+        String sql;
+        if (unique) {
+            sql = "CREATE UNIQUE INDEX `" + indexName + "` ON `" + tableName + "` (" + columnsSql + ")";
+        } else {
+            sql = "CREATE INDEX `" + indexName + "` ON `" + tableName + "` (" + columnsSql + ")";
+        }
+        connection.createStatement().executeUpdate(sql);
+    }
+
+    private void ensureColumnExists(Connection connection, String column, String definition) throws SQLException {
+        if (columnExists(connection, column)) {
+            return;
+        }
+
+        String sql = "ALTER TABLE `" + table + "` ADD COLUMN `" + column + "` " + definition;
+        // Einige DBs (SQLite) erlauben kein ; am Ende, also weglassen
+        connection.createStatement().executeUpdate(sql);
+
+        if ("updated_at".equals(column)) {
+            long now = Instant.now().toEpochMilli();
+            String updateSql = "UPDATE `" + table + "` SET `updated_at` = ? WHERE `updated_at` = 0 OR `updated_at` IS NULL";
+            try (PreparedStatement ps = connection.prepareStatement(updateSql)) {
+                ps.setLong(1, now);
+                ps.executeUpdate();
+            }
+        }
+    }
+
     private void initTable(Connection connection) throws SQLException {
         String itemColumnType = type == DatabaseType.MYSQL ? "LONGTEXT" : "TEXT";
         String textColumnType = type == DatabaseType.MYSQL ? "TEXT" : "TEXT";
@@ -156,8 +218,8 @@ public class Database {
         ensureColumnExists(connection, "updated_at", type == DatabaseType.MYSQL ? "BIGINT NOT NULL DEFAULT 0" : "INTEGER NOT NULL DEFAULT 0");
         ensureColumnExists(connection, "is_deleted", "BOOLEAN NOT NULL DEFAULT FALSE");
 
-        String indexSql = "CREATE INDEX IF NOT EXISTS `idx_" + table + "_updated` ON `" + table + "` (`updated_at`);";
-        connection.createStatement().executeUpdate(indexSql);
+        // replace CREATE INDEX IF NOT EXISTS with metadata-checked creation
+        ensureIndexExists(connection, table, "idx_" + table + "_updated", "`updated_at`", false);
     }
 
     private void initHistoryTables(Connection connection) throws SQLException {
@@ -177,11 +239,8 @@ public class Database {
                 ");";
         connection.createStatement().executeUpdate(versionsSql);
 
-        String versionsIndex = "CREATE INDEX IF NOT EXISTS `idx_" + versionsTable + "_item` ON `" + versionsTable + "` (`item_name`);";
-        connection.createStatement().executeUpdate(versionsIndex);
-
-        String versionsUnique = "CREATE UNIQUE INDEX IF NOT EXISTS `idx_" + versionsTable + "_uniq` ON `" + versionsTable + "` (`item_name`, `version`);";
-        connection.createStatement().executeUpdate(versionsUnique);
+        ensureIndexExists(connection, versionsTable, "idx_" + versionsTable + "_item", "`item_name`", false);
+        ensureIndexExists(connection, versionsTable, "idx_" + versionsTable + "_uniq", "`item_name`,`version`", true);
 
         String auditSql = "CREATE TABLE IF NOT EXISTS `" + auditTable + "` (" +
                 "`id` " + idDefinition + "," +
@@ -193,41 +252,31 @@ public class Database {
                 ");";
         connection.createStatement().executeUpdate(auditSql);
 
-        String auditIndex = "CREATE INDEX IF NOT EXISTS `idx_" + auditTable + "_created` ON `" + auditTable + "` (`created_at`);";
-        connection.createStatement().executeUpdate(auditIndex);
-    }
-
-    private void ensureColumnExists(Connection connection, String column, String definition) throws SQLException {
-        if (columnExists(connection, column)) {
-            return;
-        }
-
-        String sql = "ALTER TABLE `" + table + "` ADD COLUMN `" + column + "` " + definition + ";";
-        connection.createStatement().executeUpdate(sql);
-
-        if ("updated_at".equals(column)) {
-            long now = Instant.now().toEpochMilli();
-            String updateSql = "UPDATE `" + table + "` SET `updated_at` = ? WHERE `updated_at` = 0 OR `updated_at` IS NULL";
-            try (PreparedStatement ps = connection.prepareStatement(updateSql)) {
-                ps.setLong(1, now);
-                ps.executeUpdate();
-            }
-        }
+        ensureIndexExists(connection, auditTable, "idx_" + auditTable + "_created", "`created_at`", false);
     }
 
     private boolean columnExists(Connection connection, String column) throws SQLException {
+        // try exact table name
         if (hasColumn(connection, table, column)) {
             return true;
         }
+        // try upper / lower case variants (some DBs fold case differently)
         if (hasColumn(connection, table.toUpperCase(Locale.ROOT), column)) {
             return true;
         }
         return hasColumn(connection, table.toLowerCase(Locale.ROOT), column);
     }
 
+    // Low-level check über DatabaseMetaData.getColumns
     private boolean hasColumn(Connection connection, String tableName, String column) throws SQLException {
+        // getColumns: (catalog, schemaPattern, tableNamePattern, columnNamePattern)
+        // catalog kann null sein; für H2/MySQL es klappt in den meisten Fällen mit connection.getCatalog()
         try (ResultSet rs = connection.getMetaData().getColumns(connection.getCatalog(), null, tableName, column)) {
             return rs.next();
+        } catch (SQLException ex) {
+            // manche Treiber werfen, statt einfach ein leeres ResultSet zurückzugeben
+            // im Fehlerfall gehen wir davon aus, dass die Spalte nicht existiert
+            return false;
         }
     }
 

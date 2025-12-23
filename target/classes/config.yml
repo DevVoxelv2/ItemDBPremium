@@ -1,15 +1,40 @@
+License:
+  Key: ""
+
 Prefix: "&8[&cItemDB&8]&7 "
 
 Database:
-  Type: "mysql" # oder "sqlite"
+  # Supported values: mysql, sqlite, mongodb
+  # mysql     -> Uses a MySQL or MariaDB server
+  # sqlite    -> Stores data in a local SQLite file (no external server required)
+  # mongodb   -> Uses a MongoDB database (requires the driver dependency)
+  Type: "mysql"
+
+  # --- MySQL settings ---
   Host: "127.0.0.1"
   Port: 3306
   Database: "itemdb"
   User: "root"
   Password: "password"
-  Table: "itemdb_items"
+
+  # --- Shared settings ---
+  Table: "itemdb_items"         # Base table/collection name for stored items
+  SyncIntervalTicks: 100         # How often (in ticks) the plugin syncs pending changes to the database
+
+  # --- MongoDB settings ---
+  MongoConnectionUri: "mongodb://127.0.0.1:27017/itemdb"  # Full Mongo connection URI including credentials if required
+  MongoDatabase: "itemdb"                                  # Database name inside MongoDB
+  MongoCollectionPrefix: "itemdb_"                         # Prefix for MongoDB collections (items, versions, audit)
+
+Webhooks:
+  Discord:
+    OnChange: "https://discordWebhookUrl"   # Called when an item is created, updated, or deleted
+    OnError: "https://discordWebhookUrl"    # Called when a database operation fails
 
 Gui:
-  Title: "§cItemDB §7» §fItems"
+  Title: "&cItemDB &7» &fItems"
   Rows: 6
   BorderGlassData: 7
+
+Search:
+  DefaultLimit: 10

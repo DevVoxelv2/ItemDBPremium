@@ -2,9 +2,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>net.devvoxel</groupId>
-  <artifactId>ItemDB</artifactId>
-  <name>ItemDB</name>
-  <version>1.0.2-SNAPSHOT</version>
+  <artifactId>ItemDBPremium</artifactId>
+  <name>ItemDBPremium</name>
+  <version>1.0.0-SNAPSHOT</version>
   <build>
     <defaultGoal>clean package</defaultGoal>
     <resources>
@@ -13,6 +13,7 @@
         <directory>src/main/resources</directory>
       </resource>
     </resources>
+    <finalName>ItemDBPremium-1.0.0-SNAPSHOT</finalName>
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -53,12 +54,22 @@
       <id>bstats-repo</id>
       <url>https://repo.codemc.io/repository/maven-public/</url>
     </repository>
+    <repository>
+      <id>placeholderapi</id>
+      <url>https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
+    </repository>
   </repositories>
   <dependencies>
     <dependency>
       <groupId>io.papermc.paper</groupId>
       <artifactId>paper-api</artifactId>
       <version>1.21-R0.1-SNAPSHOT</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>me.clip</groupId>
+      <artifactId>placeholderapi</artifactId>
+      <version>2.11.5</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>
