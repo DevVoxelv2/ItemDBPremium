@@ -39,7 +39,7 @@ public class ItemDB extends JavaPlugin {
 
     private static final String API_BASE_URL = "https://www.craftingstudiopro.de";
     private static final String LICENSE_VALIDATE_ENDPOINT = "/api/license/validate";
-    private static final String PLUGIN_ID = "plugin-1764184078690-ogy77ebgu";
+    private static final String PLUGIN_ID = "itemdbpremium";
     private static final Gson GSON = new Gson();
 
     public static ItemDB get() {
